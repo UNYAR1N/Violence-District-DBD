@@ -325,7 +325,7 @@ local function playMansSound()
     mansSound.Name = "DBD_DIA_MansSound"
     mansSound.SoundId = mansAssetUrl
     mansSound.Volume = 1.5
-    mansSound.PlaybackSpeed = 1.0 + math.random() * 0.6
+    mansSound.PlaybackSpeed = 1.0 + math.random() * 0.4
     mansSound.RollOffMaxDistance = math.huge 
     mansSound.Parent = root
     mansSound:Play()
