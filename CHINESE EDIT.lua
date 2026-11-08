@@ -1,4 +1,3 @@
-
 -- [[ Notification Library - Exact Original Structure & Positioning ]]
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -180,11 +179,13 @@ end
 local AUDIO_URL_BGS  = "https://raw.githubusercontent.com/UNYAR1N/DBD_DIA/main/bdbdiamusic.mp3"
 local AUDIO_URL_MANS = "https://raw.githubusercontent.com/UNYAR1N/DBD_DIA/main/Kobe%20Bryant%20MAN%20Sound%20Effect.mp3"
 local AUDIO_URL_WCIS = "https://raw.githubusercontent.com/UNYAR1N/DBD_DIA/main/Kobe%20Bryant%20What%20Can%20I%20Say%20Sound%20Effect.mp3"
+local AUDIO_URL_LAU  = "https://raw.githubusercontent.com/UNYAR1N/DBD_DIA/main/kobe-bryant-laughing-made-with-Voicemod.mp3" -- เพิ่มใหม่
 
 local FOLDER_PATH = "storage/DBD_DIA"
 local FILE_BGS    = "bgs"
 local FILE_MANS   = "mans"
 local FILE_WCIS   = "wcis"
+local FILE_LAU    = "Lau" -- เพิ่มใหม่
 
 local TEAM_NAME      = "Killer"
 local MAX_VOLUME     = 1.5
@@ -277,7 +278,7 @@ end
 local bgsAssetUrl  = loadAsset(FILE_BGS, AUDIO_URL_BGS)
 local mansAssetUrl = loadAsset(FILE_MANS, AUDIO_URL_MANS)
 local wcisAssetUrl = loadAsset(FILE_WCIS, AUDIO_URL_WCIS)
-
+local lauAssetUrl  = loadAsset(FILE_LAU, AUDIO_URL_LAU) -- เพิ่มใหม่
 
 -- ============================================================
 -- 3. Services & Variables
@@ -289,6 +290,7 @@ local player     = Players.LocalPlayer
 
 local killerVisibleState = {} 
 local nextWcisAllowed = 0     
+local nextLauAllowed = 0 -- เพิ่มตัวแปรคูลดาวน์เสียงหัวเราะ
 
 -- ============================================================
 -- 4. สร้างเพลง BGS (Singleton ใน SoundService)
@@ -313,7 +315,7 @@ currentSound.SoundGroup    = currentGroup
 currentSound.Parent        = SoundService
 
 -- ============================================================
--- 5. ฟังก์ชันเล่นเสียง (mans / wcis)
+-- 5. ฟังก์ชันเล่นเสียง (mans / wcis / lau)
 -- ============================================================
 local function playMansSound()
     local myChar = player.Character
@@ -349,6 +351,24 @@ local function playWcisSound()
 
     wcisSound.Ended:Connect(function() wcisSound:Destroy() end)
     task.delay(10, function() if wcisSound and wcisSound.Parent then wcisSound:Destroy() end end)
+end
+
+-- ฟังก์ชันเล่นเสียงหัวเราะ (Lau)
+local function playLauSound()
+    local myChar = player.Character
+    if not myChar then return end
+    local root = myChar:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local lauSound = Instance.new("Sound")
+    lauSound.Name = "DBD_DIA_LauSound"
+    lauSound.SoundId = lauAssetUrl
+    lauSound.Volume = 1.5
+    lauSound.Parent = root
+    lauSound:Play()
+
+    lauSound.Ended:Connect(function() lauSound:Destroy() end)
+    task.delay(10, function() if lauSound and lauSound.Parent then lauSound:Destroy() end end)
 end
 
 -- ============================================================
@@ -426,7 +446,7 @@ local function computeTargets(dist)
 end
 
 -- ============================================================
--- 8. ระบบตรวจจับการลับตา Killer
+-- 8. ระบบตรวจจับการเห็น/ลับตา Killer
 -- ============================================================
 local visCheckTimer = 0
 local function checkKillerVisibility(dt)
@@ -469,32 +489,41 @@ local function checkKillerVisibility(dt)
 
                     local wasVisible = killerVisibleState[plr] or false
                     
+                    -- 1. ตรรกะเมื่อ "เห็น" Killer (เล่นเสียง Lau)
+                    if not wasVisible and isVisible then
+                        if tick() >= nextLauAllowed then
+                            playLauSound()
+                            -- คูลดาวน์สั้นกว่าตอนลับตา (4-7 วินาที)
+                            nextLauAllowed = tick() + math.random(4, 7)
+                        end
+                    end
+
+                    -- 2. ตรรกะเมื่อ "ลับตา" Killer (เล่นเสียง Wcis + แจ้งเตือน)
                     if wasVisible and not isVisible then
                         if tick() >= nextWcisAllowed then
                             playWcisSound()
                             
-                            
                             local noti = NotificationLib.new()
 
--- รวมประโยคภาษาจีนล้วนๆ
-local messages = {
-    "慢了一步哦",
-    "太慢了吧",
-    "有本事就追上我啊",
-    "你是乌龟吗？",
-    "看得见吗？",
-    "过来这里！",
-    "差一点就中了",
-    "我要说什么来着"
-}
+                            -- รวมประโยคภาษาจีนล้วนๆ
+                            local messages = {
+                                "慢了一步哦",
+                                "太慢了吧",
+                                "有本事就追上我啊",
+                                "你是乌龟吗？",
+                                "看得见吗？",
+                                "过来这里！",
+                                "差一点就中了",
+                                "我要说什么来着"
+                            }
 
--- สุ่มเลือกข้อความ 1 ประโยค
-local randomMsg = messages[math.random(#messages)]
+                            -- สุ่มเลือกข้อความ 1 ประโยค
+                            local randomMsg = messages[math.random(#messages)]
 
--- ส่งแจ้งเตือน
-noti:Send(randomMsg, 1.8)
-
+                            -- ส่งแจ้งเตือน
+                            noti:Send(randomMsg, 1.8)
                             
+                            -- คูลดาวน์ปกติ (8-12 วินาที)
                             nextWcisAllowed = tick() + math.random(8, 12)
                         end
                     end
