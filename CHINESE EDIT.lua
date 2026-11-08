@@ -187,7 +187,7 @@ local FILE_MANS   = "mans"
 local FILE_WCIS   = "wcis"
 
 local TEAM_NAME      = "Killer"
-local MAX_VOLUME     = 2.5
+local MAX_VOLUME     = 1.5
 local MUFFLED_VOLUME = 0.8
 local PLAYBACK_SPEED = 1.25
 
@@ -324,7 +324,7 @@ local function playMansSound()
     local mansSound = Instance.new("Sound")
     mansSound.Name = "DBD_DIA_MansSound"
     mansSound.SoundId = mansAssetUrl
-    mansSound.Volume = 2.5
+    mansSound.Volume = 1.5
     mansSound.PlaybackSpeed = 1.0 + math.random() * 0.6
     mansSound.RollOffMaxDistance = math.huge 
     mansSound.Parent = root
@@ -343,7 +343,7 @@ local function playWcisSound()
     local wcisSound = Instance.new("Sound")
     wcisSound.Name = "DBD_DIA_WcisSound"
     wcisSound.SoundId = wcisAssetUrl
-    wcisSound.Volume = 2.5
+    wcisSound.Volume = 1.5
     wcisSound.Parent = root
     wcisSound:Play()
 
