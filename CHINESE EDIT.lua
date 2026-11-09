@@ -291,9 +291,10 @@ local killerVisibleState = {}
 local nextWcisAllowed = 0     
 local nextLauAllowed = 0
 
--- ตัวแปรสำหรับคิวเสียง (ป้องกัน Lau กับ Wcis ทับกัน)
-local isLauPlaying = false
-local pendingWcis = false
+-- ตัวแปรสำหรับคิวเสียง (Lau กับ wcis เล่นทีละอัน ต้องจบก่อนค่อยเล่นอันต่อไป)
+local isVoicePlaying = false   -- true = มี Lau หรือ wcis กำลังเล่นอยู่
+local voiceQueue = {}          -- คิวรอเล่น เช่น {"wcis", "lau"}
+local playNextVoice            -- ประกาศล่วงหน้า (forward declaration)
 
 -- ============================================================
 -- 4. สร้างเพลง BGS (Singleton ใน SoundService)
@@ -339,62 +340,66 @@ local function playMansSound()
     task.delay(10, function() if mansSound and mansSound.Parent then mansSound:Destroy() end end)
 end
 
-local function playWcisSound()
-    -- ถ้า Lau กำลังเล่นอยู่ ให้ต่อคิว wcis ไว้
-    if isLauPlaying then
-        pendingWcis = true
+-- เล่นเสียง Lau/wcis จริง ๆ ทันที (เรียกจากระบบคิวเท่านั้น)
+local function startVoice(kind)
+    local myChar = player.Character
+    local root = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local assetUrl = (kind == "lau") and lauAssetUrl or wcisAssetUrl
+
+    -- ถ้าเล่นไม่ได้ (ไม่มีตัวละคร/ไม่มีไฟล์เสียง) ให้ข้ามไปอันถัดไปในคิว
+    if not root or not assetUrl then
+        isVoicePlaying = false
+        playNextVoice()
         return
     end
 
-    local myChar = player.Character
-    if not myChar then return end
-    local root = myChar:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+    isVoicePlaying = true
 
-    local wcisSound = Instance.new("Sound")
-    wcisSound.Name = "DBD_DIA_WcisSound"
-    wcisSound.SoundId = wcisAssetUrl
-    wcisSound.Volume = 1.5
-    wcisSound.Parent = root
-    wcisSound:Play()
+    local voiceSound = Instance.new("Sound")
+    voiceSound.Name = (kind == "lau") and "DBD_DIA_LauSound" or "DBD_DIA_WcisSound"
+    voiceSound.SoundId = assetUrl
+    voiceSound.Volume = 1.5
+    voiceSound.Parent = root
+    voiceSound:Play()
 
-    wcisSound.Ended:Connect(function() wcisSound:Destroy() end)
-    task.delay(10, function() if wcisSound and wcisSound.Parent then wcisSound:Destroy() end end)
+    local finished = false
+    local function finishVoice()
+        if finished then return end
+        finished = true
+        isVoicePlaying = false
+        if voiceSound then voiceSound:Destroy() end
+        playNextVoice() -- จบแล้วค่อยเล่นอันถัดไปในคิว
+    end
+
+    voiceSound.Ended:Connect(finishVoice)
+    -- กันเหนียว: ถ้าเสียงโหลดไม่ขึ้น/ไม่ยิง Ended ให้ปลดล็อกหลังเวลาหนึ่ง
+    task.delay(15, finishVoice)
+end
+
+playNextVoice = function()
+    if isVoicePlaying then return end
+    local nextKind = table.remove(voiceQueue, 1)
+    if nextKind then
+        startVoice(nextKind)
+    end
+end
+
+-- ใส่เสียงเข้าคิว: ถ้าไม่มีอะไรเล่นอยู่จะเล่นทันที ถ้ามีจะรอให้จบก่อน
+local function queueVoice(kind)
+    -- กันคิวซ้ำชนิดเดียวกันซ้อนกัน
+    for _, k in ipairs(voiceQueue) do
+        if k == kind then return end
+    end
+    table.insert(voiceQueue, kind)
+    playNextVoice()
+end
+
+local function playWcisSound()
+    queueVoice("wcis")
 end
 
 local function playLauSound()
-    if isLauPlaying then return end
-    local myChar = player.Character
-    if not myChar then return end
-    local root = myChar:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    isLauPlaying = true
-    local lauSound = Instance.new("Sound")
-    lauSound.Name = "DBD_DIA_LauSound"
-    lauSound.SoundId = lauAssetUrl
-    lauSound.Volume = 1.5
-    lauSound.Parent = root
-    lauSound:Play()
-
-    lauSound.Ended:Connect(function()
-        isLauPlaying = false
-        lauSound:Destroy()
-        if pendingWcis then
-            pendingWcis = false
-            playWcisSound()
-        end
-    end)
-    task.delay(10, function() 
-        if lauSound and lauSound.Parent then 
-            isLauPlaying = false
-            lauSound:Destroy() 
-            if pendingWcis then
-                pendingWcis = false
-                playWcisSound()
-            end
-        end 
-    end)
+    queueVoice("lau")
 end
 
 -- ============================================================
