@@ -1,3 +1,6 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/UNYAR1N/Violence-District-DBD/main/startdailog.lua"))()
+
+
 -- [[ Notification Library - Exact Original Structure & Positioning ]]
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
