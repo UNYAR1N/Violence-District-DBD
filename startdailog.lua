@@ -94,7 +94,7 @@ G2L["7"]["TextColor3"] = Color3.fromRGB(227, 221, 245);
 G2L["7"]["BackgroundTransparency"] = 1;
 G2L["7"]["Size"] = UDim2.new(0.91489, 0, 0.15203, 0);
 G2L["7"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["7"]["Text"] = [[This Scropt Work At In Game And Thank For Useing this script (v0.2.0) (use this script for every update! XD) thank you so much enjoyyyyyyyy. RESPECT POOKIES]];
+G2L["7"]["Text"] = [[This Script Work In GamePlayed And Thank For Useing this script (v0.2.0) (use this script for every update! XD) thank you so much enjoyyyyyyyy. RESPECT POOKIES]];
 G2L["7"]["Position"] = UDim2.new(0.04255, 0, 0.19932, 0);
 
 
